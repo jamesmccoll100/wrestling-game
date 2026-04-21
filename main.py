@@ -7,12 +7,11 @@ import termios
 import signal
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
-from flask import Flask, render_template, request
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wrestling-arena-2026'
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
 
-GAME_COMMAND = ['python3', '-u', 'WrestlingMenu.py']
 COLS = 90
 ROWS = 30
 
@@ -25,12 +24,24 @@ def index():
 @socketio.on('connect')
 def on_connect():
     sid = request.sid
+
+    # Set up environment with proper terminal settings
+    env = os.environ.copy()
+    env['TERM'] = 'xterm-256color'
+    env['COLUMNS'] = str(COLS)
+    env['LINES'] = str(ROWS)
+
     pid, fd = pty.fork()
     if pid == 0:
-        winsize = struct.pack('HHHH', ROWS, COLS, 0, 0)
-        fcntl.ioctl(pty.STDOUT_FILENO, termios.TIOCSWINSZ, winsize)
-        os.execvp(GAME_COMMAND[0], GAME_COMMAND)
+        # Child process — set terminal size then launch the game
+        try:
+            winsize = struct.pack('HHHH', ROWS, COLS, 0, 0)
+            fcntl.ioctl(pty.STDOUT_FILENO, termios.TIOCSWINSZ, winsize)
+        except Exception:
+            pass
+        os.execvpe('python3', ['python3', '-u', 'WrestlingMenu.py'], env)
     else:
+        # Parent process — store session and start reading
         sessions[sid] = (pid, fd)
         socketio.start_background_task(read_loop, sid, fd)
 
@@ -72,5 +83,5 @@ def on_disconnect():
             pass
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8080))
     socketio.run(app, host='0.0.0.0', port=port)
