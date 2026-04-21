@@ -97,7 +97,7 @@ def _draw_title_at(stdscr, y):
     """Draw the full WRESTLING ARENA ASCII block starting at row y."""
     h, w = stdscr.getmaxyx()
     for idx, line in enumerate(_TITLE_BLOCK1):
-        lx = max(0, w // 2 - len(line) // 2)
+        lx = max(0, w // 2 - len(line) // 2 - 1)
         try:
             stdscr.addstr(y + idx, lx, line[:w - 1], _ip(16) | curses.A_BOLD)
         except curses.error:
@@ -528,7 +528,7 @@ def print_large_title(stdscr):
     title_start_y = subtitle_y + 2
 
     for idx, line in enumerate(title):
-        x = w // 2 - len(line) // 2
+        x = max(0, w // 2 - len(line) // 2 - 1)
         y = title_start_y + idx
         try:
             stdscr.addstr(y, x, line, curses.color_pair(16))
