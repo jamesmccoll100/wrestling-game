@@ -629,7 +629,7 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
         "NORTH WEST. UK. 2026"
     ]
 
-    footer_x = w - max(len(line) for line in footer_lines) - 2
+    footer_x = w - max(len(line) for line in footer_lines) - 3
     footer_y_start = h - len(footer_lines) - 1
 
     for i, line in enumerate(footer_lines):
@@ -640,7 +640,7 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
 
     stdscr.refresh()
 
-    footer_x = w - max(len(line) for line in footer_lines) - 2
+    footer_x = w - max(len(line) for line in footer_lines) - 3
     footer_y_start = h - len(footer_lines) - 1
 
     for i, line in enumerate(footer_lines):
