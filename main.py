@@ -5,7 +5,7 @@ import struct
 import fcntl
 import termios
 import signal
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
@@ -14,18 +14,36 @@ socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
 
 COLS = 90
 ROWS = 30
+PASSWORD = 'hitman'  # ← change this to whatever password you want
 
 sessions = {}
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
+    if not session.get('authenticated'):
+        return redirect(url_for('login'))
     return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form.get('password') == PASSWORD:
+            session['authenticated'] = True
+            return redirect(url_for('index'))
+        else:
+            error = 'Incorrect password. Try again.'
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 @socketio.on('connect')
 def on_connect():
     sid = request.sid
 
-    # Set up environment with proper terminal settings
     env = os.environ.copy()
     env['TERM'] = 'xterm-256color'
     env['COLUMNS'] = str(COLS)
@@ -33,15 +51,13 @@ def on_connect():
 
     pid, fd = pty.fork()
     if pid == 0:
-        # Child process — set terminal size then launch the game
         try:
             winsize = struct.pack('HHHH', ROWS, COLS, 0, 0)
             fcntl.ioctl(pty.STDOUT_FILENO, termios.TIOCSWINSZ, winsize)
         except Exception:
             pass
-        os.execvpe('python3', ['python3', '-u', 'run_game.py'], env)
+        os.execvpe('python3', ['python3', '-u', 'WrestlingMenu.py'], env)
     else:
-        # Parent process — store session and start reading
         sessions[sid] = (pid, fd)
         socketio.start_background_task(read_loop, sid, fd)
 
