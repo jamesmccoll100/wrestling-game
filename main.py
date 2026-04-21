@@ -39,7 +39,7 @@ def on_connect():
             fcntl.ioctl(pty.STDOUT_FILENO, termios.TIOCSWINSZ, winsize)
         except Exception:
             pass
-        os.execvpe('python3', ['python3', '-u', 'WrestlingMenu.py'], env)
+        os.execvpe('python3', ['python3', '-u', 'run_game.py'], env)
     else:
         # Parent process — store session and start reading
         sessions[sid] = (pid, fd)
