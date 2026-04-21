@@ -1,6 +1,5 @@
 import curses
 import subprocess
-import pygame
 import os
 import json
 import time
