@@ -6,8 +6,8 @@ import fcntl
 import termios
 import signal
 from flask import Flask, render_template
-from flask_socketio import SocketIO, emit, request
-
+from flask_socketio import SocketIO, emit
+from flask import Flask, render_template, request
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wrestling-arena-2026'
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
