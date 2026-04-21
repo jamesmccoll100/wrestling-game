@@ -74,5 +74,24 @@
 
     term.onKey(({ key }) => socket.emit('input', key));
   </script>
+<!-- Background music -->
+  <audio id="bgmusic" loop preload="auto">
+    <source src="https://res.cloudinary.com/dwyqyl1je/video/upload/v1776798392/WrestlingArenaMusic_yb1spa.wav" type="audio/wav">
+  </audio>
+
+  <script>
+    // Start music on first user interaction (browser requirement)
+    const music = document.getElementById('bgmusic');
+    music.volume = 0.4;
+
+    function startMusic() {
+      music.play().catch(() => {});
+      document.removeEventListener('click', startMusic);
+      document.removeEventListener('keydown', startMusic);
+    }
+
+    document.addEventListener('click', startMusic);
+    document.addEventListener('keydown', startMusic);
+  </script>
 </body>
 </html>
