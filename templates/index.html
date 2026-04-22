@@ -85,8 +85,15 @@
     const socket = io({ transports: ['websocket'] });
 
     socket.on('connect', () => {
-      term.write('\r\nConnected. Loading game...\r\n');
-    });
+  const text = 'Connected. Loading game...';
+  const cols = 90;
+  const padding = Math.floor((cols - text.length) / 2);
+  const rows = 30;
+  const topPadding = Math.floor(rows / 2);
+  let output = '\r\n'.repeat(topPadding);
+  output += ' '.repeat(padding) + text + '\r\n';
+  term.write(output);
+});
     socket.on('output', data => term.write(data));
     socket.on('game_ended', () => {
       term.write('\r\n\r\n[ Game session ended. Refresh to play again. ]\r\n');
