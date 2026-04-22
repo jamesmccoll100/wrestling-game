@@ -39,18 +39,22 @@
   <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
   <script>
     const term = new Terminal({
-      cols: 90,
-      rows: 30,
-      cursorBlink: true,
-      allowTransparency: false,
-      theme: {
-        background: '#000000',
-        foreground: '#ffffff',
-        black: '#000000',
-        brightBlack: '#000000',
-        cursor: '#ffffff',
-        selectionBackground: '#ffffff'
-      }
+  cols: 90,
+  rows: 30,
+  cursorBlink: true,
+  allowTransparency: false,
+  fontFamily: 'Courier Prime, Courier New, monospace',
+  fontSize: 14,
+  lineHeight: 1.0,
+  theme: {
+    background: '#000000',
+    foreground: '#ffffff',
+    black: '#000000',
+    brightBlack: '#000000',
+    cursor: '#ffffff',
+    selectionBackground: '#ffffff'
+  }
+});
     });
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
