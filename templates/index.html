@@ -30,37 +30,55 @@
       background: #000000 !important;
       background-color: #000000 !important;
     }
+    #mutebutton {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: #000;
+      border: 1px solid #444;
+      color: #fff;
+      font-family: monospace;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      z-index: 999;
+    }
+    #mutebutton:hover { border-color: #fff; }
   </style>
 </head>
 <body>
   <div id="terminal"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
   <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
   <script>
     const term = new Terminal({
-  cols: 90,
-  rows: 30,
-  cursorBlink: true,
-  allowTransparency: false,
-  fontFamily: 'Courier Prime, Courier New, monospace',
-  fontSize: 14,
-  lineHeight: 1.0,
-  theme: {
-    background: '#000000',
-    foreground: '#ffffff',
-    black: '#000000',
-    brightBlack: '#000000',
-    cursor: '#ffffff',
-    selectionBackground: '#ffffff'
-  }
-});
+      cols: 90,
+      rows: 30,
+      cursorBlink: true,
+      allowTransparency: false,
+      fontFamily: 'Courier Prime, Courier New, monospace',
+      fontSize: 14,
+      lineHeight: 1.0,
+      theme: {
+        background: '#000000',
+        foreground: '#ffffff',
+        black: '#000000',
+        brightBlack: '#000000',
+        cursor: '#ffffff',
+        selectionBackground: '#ffffff',
+        magenta: '#ff69b4',
+        brightMagenta: '#ff69b4'
+      }
     });
+
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     term.open(document.getElementById('terminal'));
 
-    // Force black background on the canvas element directly
     const canvas = document.querySelector('.xterm-screen canvas');
     if (canvas) canvas.style.background = '#000000';
 
@@ -79,13 +97,17 @@
 
     term.onKey(({ key }) => socket.emit('input', key));
   </script>
-<!-- Background music -->
+
   <audio id="bgmusic" loop preload="auto">
     <source src="https://res.cloudinary.com/dwyqyl1je/video/upload/v1776798392/WrestlingArenaMusic_yb1spa.wav" type="audio/wav">
   </audio>
 
+  <button id="mutebutton" onclick="
+    if(music.muted){ music.muted=false; this.textContent='♪ MUSIC'; }
+    else { music.muted=true; this.textContent='✕ MUSIC'; }
+  ">♪ MUSIC</button>
+
   <script>
-    // Start music on first user interaction (browser requirement)
     const music = document.getElementById('bgmusic');
     music.volume = 0.4;
 
@@ -98,5 +120,6 @@
     document.addEventListener('click', startMusic);
     document.addEventListener('keydown', startMusic);
   </script>
+
 </body>
 </html>
