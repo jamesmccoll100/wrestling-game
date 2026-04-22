@@ -30,20 +30,6 @@
       background: #000000 !important;
       background-color: #000000 !important;
     }
-    #mutebutton {
-      position: fixed;
-      bottom: 12px;
-      left: 12px;
-      background: #000;
-      border: 1px solid #444;
-      color: #fff;
-      font-family: monospace;
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      cursor: pointer;
-      letter-spacing: 1px;
-      z-index: 999;
-    }
     #mutebutton:hover { border-color: #fff; }
   </style>
 </head>
@@ -103,29 +89,6 @@
     });
 
     term.onKey(({ key }) => socket.emit('input', key));
-  </script>
-
-  <audio id="bgmusic" loop preload="auto">
-    <source src="https://res.cloudinary.com/dwyqyl1je/video/upload/v1776798392/WrestlingArenaMusic_yb1spa.wav" type="audio/wav">
-  </audio>
-
-  <button id="mutebutton" onclick="
-    if(music.muted){ music.muted=false; this.textContent='♪ MUSIC'; }
-    else { music.muted=true; this.textContent='✕ MUSIC'; }
-  ">♪ MUSIC</button>
-
-  <script>
-    const music = document.getElementById('bgmusic');
-    music.volume = 0.4;
-
-    function startMusic() {
-      music.play().catch(() => {});
-      document.removeEventListener('click', startMusic);
-      document.removeEventListener('keydown', startMusic);
-    }
-
-    document.addEventListener('click', startMusic);
-    document.addEventListener('keydown', startMusic);
   </script>
 
 </body>
