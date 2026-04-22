@@ -97,7 +97,7 @@ def _draw_title_at(stdscr, y):
     """Draw the full WRESTLING ARENA ASCII block starting at row y."""
     h, w = stdscr.getmaxyx()
     for idx, line in enumerate(_TITLE_BLOCK1):
-        lx = max(0, w // 2 - len(line) // 2 - 1)
+        lx = max(0, w // 2 - len(line) // 2)
         try:
             stdscr.addstr(y + idx, lx, line[:w - 1], _ip(16) | curses.A_BOLD)
         except curses.error:
@@ -332,8 +332,34 @@ def load_bret_high_scores():
     except Exception:
         return {"wins": 0, "losses": 0, "draws": 0}
 
-def display_match_record(stdscr):
-    stats = load_bret_high_scores()
+def get_sting_progress_path():
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), ".sting_progress.json")
+
+def load_sting_high_scores():
+    path = get_sting_progress_path()
+    if not os.path.exists(path):
+        return {"wins": 0, "losses": 0, "draws": 0}
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            if "wins" not in data:
+                data["wins"] = 0
+            if "losses" not in data:
+                data["losses"] = 0
+            if "draws" not in data:
+                data["draws"] = 0
+            return data
+    except Exception:
+        return {"wins": 0, "losses": 0, "draws": 0}
+
+def load_scores_for(challenger):
+    """Return scores for whichever challenger is currently selected."""
+    if challenger == "Sting":
+        return load_sting_high_scores()
+    return load_bret_high_scores()
+
+def display_match_record(stdscr, challenger="Bret Hart"):
+    stats = load_scores_for(challenger)
 
     current_row = 0
     color_flash = True
@@ -380,7 +406,7 @@ def display_match_record(stdscr):
             pass
         stdscr.attroff(curses.color_pair(16))
 
-        title = " MATCH RECORD "
+        title = f" {challenger.upper()} — MATCH RECORD "
         try:
             stdscr.addstr(
                 box_y,
@@ -414,16 +440,19 @@ def display_match_record(stdscr):
         col_y = sep_y + 2
         col_width = 18
 
+        wins_pair  = curses.color_pair(20) if challenger == "Bret Hart" else curses.color_pair(32)
+        losses_pair = curses.color_pair(21) if challenger == "Bret Hart" else curses.color_pair(30)
+
         try:
-            stdscr.addstr(col_y, box_x + 6 + col_width // 2 - 2, "WINS", curses.color_pair(20))
-            stdscr.addstr(col_y + 2, box_x + 6 + col_width // 2, str(wins), curses.color_pair(20))
+            stdscr.addstr(col_y, box_x + 6 + col_width // 2 - 2, "WINS", wins_pair)
+            stdscr.addstr(col_y + 2, box_x + 6 + col_width // 2, str(wins), wins_pair)
         except curses.error:
             pass
 
         mid_x = box_x + box_width // 2 - col_width // 2
         try:
-            stdscr.addstr(col_y, mid_x + col_width // 2 - 4, "LOSSES", curses.color_pair(21))
-            stdscr.addstr(col_y + 2, mid_x + col_width // 2, str(losses), curses.color_pair(21))
+            stdscr.addstr(col_y, mid_x + col_width // 2 - 4, "LOSSES", losses_pair)
+            stdscr.addstr(col_y + 2, mid_x + col_width // 2, str(losses), losses_pair)
         except curses.error:
             pass
 
@@ -528,14 +557,14 @@ def print_large_title(stdscr):
     title_start_y = subtitle_y + 2
 
     for idx, line in enumerate(title):
-        x = max(0, w // 2 - len(line) // 2 - 1)
+        x = w // 2 - len(line) // 2
         y = title_start_y + idx
         try:
             stdscr.addstr(y, x, line, curses.color_pair(16))
         except curses.error:
             pass
 
-def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=None):
+def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=None, current_challenger="Bret Hart"):
     stdscr.clear()
 
     if not check_screen_size(stdscr, "menu"):
@@ -588,6 +617,11 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
                     stdscr.attron(curses.color_pair(tag_color_pair))
                     stdscr.addch(y, display_x + len(display_text) - 1, '*')
                     stdscr.attroff(curses.color_pair(tag_color_pair))
+                elif row == "Challanger":
+                    # Show challenger toggle highlighted
+                    toggle_text = f"< {current_challenger} >"
+                    toggle_x = w // 2 - len(toggle_text) // 2
+                    stdscr.addstr(y, toggle_x, toggle_text)
                 else:
                     stdscr.addstr(y, x, row)
                 stdscr.attroff(highlight_color)
@@ -613,14 +647,21 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
                     stdscr.attroff(curses.color_pair(tag_color_pair))
                 else:
                     if row == "Challanger":
-                        stdscr.attron(curses.color_pair(1))
+                        # Show challenger toggle: < Bret Hart > or < Sting >
+                        challenger_colour = curses.color_pair(17) if current_challenger == "Bret Hart" else curses.color_pair(18)
+                        toggle_text = f"< {current_challenger} >"
+                        toggle_x = w // 2 - len(toggle_text) // 2
+                        stdscr.attron(challenger_colour)
+                        stdscr.addstr(y, toggle_x, toggle_text)
+                        stdscr.attroff(challenger_colour)
                     elif row == "Match Record":
                         stdscr.attron(curses.color_pair(3))
+                        stdscr.addstr(y, x, row)
+                        stdscr.attroff(curses.color_pair(3))
                     elif row == "Exit":
                         stdscr.attron(curses.color_pair(1))
-                    stdscr.addstr(y, x, row)
-                    if row in ["Challanger", "Match Record", "Exit"]:
-                        stdscr.attroff(curses.color_pair(1) if row == "Challanger" or row == "Exit" else curses.color_pair(3))
+                        stdscr.addstr(y, x, row)
+                        stdscr.attroff(curses.color_pair(1))
         except curses.error:
             pass
 
@@ -629,7 +670,7 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
         "NORTH WEST. UK. 2026"
     ]
 
-    footer_x = w - max(len(line) for line in footer_lines) - 3
+    footer_x = w - max(len(line) for line in footer_lines) - 1
     footer_y_start = h - len(footer_lines) - 1
 
     for i, line in enumerate(footer_lines):
@@ -640,7 +681,7 @@ def print_menu(stdscr, selected_row_idx, color_flash, wins=0, tag_color_pair=Non
 
     stdscr.refresh()
 
-    footer_x = w - max(len(line) for line in footer_lines) - 3
+    footer_x = w - max(len(line) for line in footer_lines) - 1
     footer_y_start = h - len(footer_lines) - 1
 
     for i, line in enumerate(footer_lines):
@@ -676,6 +717,12 @@ def start_bret_hart_game(stdscr):
     subprocess.call(["python3", "WrestlingArena.py"])
     reset_background(stdscr)
 
+def start_sting_game(stdscr):
+    display_loading_message(stdscr, "Loading game", curses.color_pair(14))
+    curses.endwin()
+    subprocess.call(["python3", "WrestlingArena2NEW.py"])
+    reset_background(stdscr)
+
 def start_tag_team_game(stdscr):
     display_loading_message(stdscr, "Loading game", curses.color_pair(15))
     curses.endwin()
@@ -697,6 +744,21 @@ ascii_art = {
         " ██╔══██║██╔══██║██╔══██╗   ██║   ",
         " ██║  ██║██║  ██║██║  ██║   ██║   ",
         " ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   "
+    ],
+    "Sting": [
+        " ██╗████████╗ ██╗ ███████╗              ",
+        " ██║╚══██╔══╝ ██║ ██╔════╝              ",
+        " ██║   ██║    ╚═╝ ███████╗              ",
+        " ██║   ██║        ╚════██║              ",
+        " ██║   ██║        ███████║              ",
+        " ╚═╝   ╚═╝        ╚══════╝              ",
+        "                                        ",
+        " ███████╗████████╗██╗███╗   ██╗ ██████╗ ",
+        " ██╔════╝╚══██╔══╝██║████╗  ██║██╔════╝ ",
+        " ███████╗   ██║   ██║██╔██╗ ██║██║  ███╗",
+        " ╚════██║   ██║   ██║██║╚██╗██║██║   ██║",
+        " ███████║   ██║   ██║██║ ╚████║╚██████╔╝",
+        " ╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
     ],
 }
 
@@ -729,11 +791,24 @@ Pound for pound, Bret Hart is one
 of the best wrestlers to ever lace up
 his boots. One of Hart's favorite
 weapons is the Sharpshooter, which he
-delivers with pinpoint accuracy."""
+delivers with pinpoint accuracy.""",
+        "Sting": """Nickname: The Icon
+Height: 6'2"
+Weight: 250lbs
+Special Move: Scorpion Deathlock
+Wrestling Profile:
+Shrouded in mystery, Sting looms
+on the fringe of the wrestling world.
+He's the icon, the franchise and the
+master of the Scorpion Deathlock;
+It's showtime... it's Sting!""",
     }
 
-    bret_color = curses.color_pair(17)
+    bret_color  = curses.color_pair(17)   # MAGENTA — Bret's colour
+    sting_color = curses.color_pair(18)   # RED     — Sting's colour
     white_color = curses.color_pair(1)
+
+    box_color_pair = bret_color if wrestler == "Bret Hart" else sting_color
 
     current_row = 0
     color_flash = True
@@ -761,9 +836,6 @@ delivers with pinpoint accuracy."""
 
         box_x = (w - total_width_needed) // 2
         box_y = (h - total_height_needed) // 2
-
-        if wrestler == "Bret Hart":
-            box_color_pair = bret_color
 
         stdscr.attron(box_color_pair)
         for i in range(box_height):
@@ -818,9 +890,7 @@ delivers with pinpoint accuracy."""
                 except curses.error:
                     pass
 
-        if wrestler == "Bret Hart":
-            art_color = bret_color
-
+        art_color = box_color_pair
         print_ascii_art(stdscr, art_lines, art_color, box_x, box_y)
 
         menu = ["Continue", "Back to Main Menu"]
@@ -923,10 +993,14 @@ def main(stdscr):
 
     current_row = 0
     color_flash = True
+    current_challenger = "Bret Hart"   # default challenger
 
     while True:
-        stats = load_bret_high_scores()
-        wins = stats.get("wins", 0)
+        # Tag team unlock uses combined wins from both challengers
+        bret_stats  = load_bret_high_scores()
+        sting_stats = load_sting_high_scores()
+        combined_wins = bret_stats.get("wins", 0) + sting_stats.get("wins", 0)
+        wins = combined_wins
 
         color_frame += 1
         tag_color_index = color_frame % len(tag_colors)
@@ -936,11 +1010,20 @@ def main(stdscr):
             current_row,
             color_flash,
             wins,
-            tag_colors[tag_color_index] if wins >= 5 else None
+            tag_colors[tag_color_index] if wins >= 5 else None,
+            current_challenger
         )
 
         key = stdscr.getch()
         color_flash = not color_flash
+
+        # Left/right arrows toggle the challenger when on the Challanger row (row 0)
+        if key == curses.KEY_LEFT and current_row == 0:
+            current_challenger = "Sting" if current_challenger == "Bret Hart" else "Bret Hart"
+            continue
+        if key == curses.KEY_RIGHT and current_row == 0:
+            current_challenger = "Sting" if current_challenger == "Bret Hart" else "Bret Hart"
+            continue
 
         if wins >= 5:
             menu_items = 4
@@ -950,10 +1033,13 @@ def main(stdscr):
                 current_row = (current_row - 1) % menu_items
             elif key == curses.KEY_ENTER or key in [10, 13]:
                 if current_row == 0:
-                    if display_stats_page(stdscr, "Bret Hart"):
-                        start_bret_hart_game(stdscr)
+                    if display_stats_page(stdscr, current_challenger):
+                        if current_challenger == "Bret Hart":
+                            start_bret_hart_game(stdscr)
+                        else:
+                            start_sting_game(stdscr)
                 elif current_row == 1:
-                    display_match_record(stdscr)
+                    display_match_record(stdscr, current_challenger)
                 elif current_row == 2:
                     start_tag_team_game(stdscr)
                 elif current_row == 3:
@@ -966,10 +1052,13 @@ def main(stdscr):
                 current_row = (current_row - 1) % menu_items
             elif key == curses.KEY_ENTER or key in [10, 13]:
                 if current_row == 0:
-                    if display_stats_page(stdscr, "Bret Hart"):
-                        start_bret_hart_game(stdscr)
+                    if display_stats_page(stdscr, current_challenger):
+                        if current_challenger == "Bret Hart":
+                            start_bret_hart_game(stdscr)
+                        else:
+                            start_sting_game(stdscr)
                 elif current_row == 1:
-                    display_match_record(stdscr)
+                    display_match_record(stdscr, current_challenger)
                 elif current_row == 2:
                     break
 
